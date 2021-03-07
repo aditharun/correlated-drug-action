@@ -1,0 +1,5 @@
+name,p.value,k,n,drugA_name,fullname
+14-sora.gc.nsclc,0.07534,0.601,0.901,"Gemcitabine, Cisplatin",Estimate of Placebo Survival in Advanced Non-Small Cell Lung Cancer
+2-BV.GC.Ovary,0.15538,1.401,4.701,"Gemcitabine, Carboplatin",Estimate of Placebo Survival in Recurrent Ovarian Cancer
+4-Dab.Tram.Skin,1e-4,0.901,0.501,Dabrafenib,Estimate of Placebo Survival in Metastatic BRAF-Mutant Cutaneous Melanoma
+8-erlot.GC.skin,0.02552,0.301,3.201,Gemcitabine,Estimate of Placebo Survival in Advanced Pancreatic Cancer

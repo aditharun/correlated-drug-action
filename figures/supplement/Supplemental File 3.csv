@@ -1,0 +1,5 @@
+parent_trial,reference_drug,hill.param.k,hill.param.n,p.value
+"Sorafenib and Gemcitabine, Cisplatin in Stage IIIb and IV Non-Small Cell Lung Cancer","Gemcitabine, Cisplatin",0.601,0.901,0.07534
+"Bevacizumab and Gemcitabine, Carboplatin in Recurrent Ovarian Cancer","Gemcitabine, Carboplatin",1.401,4.701,0.15538
+Dabrafenib and Trametinib in Metastatic BRAF-Mutant Cutaneous Melanoma,Dabrafenib,0.901,0.501,1e-4
+"Erlotinib and Gemcitabine, Cisplatin in Advanced Pancreatic Cancer",Gemcitabine,0.301,3.201,0.02552
