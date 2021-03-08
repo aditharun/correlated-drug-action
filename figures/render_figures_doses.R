@@ -7,12 +7,22 @@ source("figure_functions_dose.R")
 
 
 ###############################################
-title_size <- 18
-axis_text_size <- 15
-label_size <- 25
-legend_size <- 14
-facet_size <- 16
-pvalue_cex <- 6.4
+#title_size <- 18
+#axis_text_size <- 15
+#label_size <- 25
+#legend_size <- 14
+#facet_size <- 16
+#pvalue_cex <- 6.4
+
+facet_size = 16
+
+axis_text_size = 16
+title_size = 21
+legend_size = 18
+pvalue_cex = 7
+label_size = 27
+
+size_geom_text = 5
 
 dose.dir <- "../results.cell.line/doses.results.Bliss.Loewe"
 sp.dose.dir <- "../results.cell.line/sp.doses.results.Bliss.Loewe"
@@ -62,7 +72,7 @@ organize.doses <- function(x){
 
 
 
-barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size){
+barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, size_geom_text){
 
 	results <- read_csv(list.files(dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na()
 	results2 <- read_csv(list.files(sp.dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na() %>% select(-c(hours,name))
@@ -96,7 +106,7 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size){
 	label.df2 <- data.frame(trial_id = eobfit %>% pull(trial_id),
 	                       final.rho = eobfit %>% pull(p))
 
-	k <- k + geom_text(data = label.df, label = "\u2021") + geom_text(data = label.df2, label = "*")
+	k <- k + geom_text(data = label.df, label = "\u2021", size=(size_geom_text+1)) + geom_text(data = label.df2, label = "**", size=(size_geom_text+1))
 
 		mytheme <- theme(
 			panel.background = element_rect(fill = "transparent"), # bg of the panel
@@ -109,7 +119,7 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size){
 
 	k <- k + mytheme + xlab("Trial ID") + ylab("Estimate for \u03c1") 
 	k <- k + geom_hline(yintercept=0)
-	k <- k + annotate(geom = 'text', label = "   * = EOB condition is valid, \u2021 = Good fit to observed combination" , x = -Inf, y = -0.15, hjust = 0, vjust = 1, size=4)
+	k <- k + annotate(geom = 'text', label = "   ** = EOB condition is valid, \u2021 = Good fit to observed combination" , x = -Inf, y = -0.17, hjust = 0, vjust = 1, size=(size_geom_text+1.5))
 
 	k
 }
@@ -179,7 +189,7 @@ pvalues.scatter <- function(loc, loc2, legend_size, title_size, axis_text_size){
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_size), ) 
 	cbbPalette <- c( "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-	plot <- ggplot(doses.results, aes(x=transformed.fit.p, y=transformed.eob.p, color=guide)) + geom_point(size = 1.6) + geom_hline(yintercept=threshold, linetype="dashed", color="grey") + geom_vline(xintercept=threshold, linetype="dashed", color="grey") + mytheme + xlab("-log10 p-value for GoF") + ylab("-log10 p-value for EOB") + legend + scale_color_manual(values=cbbPalette)
+	plot <- ggplot(doses.results, aes(x=transformed.fit.p, y=transformed.eob.p, color=guide)) + geom_point(size = 2.4) + geom_hline(yintercept=threshold, linetype="dashed", color="grey", size=1.6) + geom_vline(xintercept=threshold, linetype="dashed", color="grey", size=1.6) + mytheme + xlab("-log10 p-value for GoF") + ylab("-log10 p-value for EOB") + legend + scale_color_manual(values=cbbPalette) + guides(colour = guide_legend(nrow = 2))
 	
 	#for 2 rows of legend instead of 1
 	#plot <- plot +  guides(color = guide_legend(nrow = 2))
@@ -213,9 +223,9 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 	) + theme(axis.line = element_line(color="black", size = 0.75)) + theme(axis.text.x = element_text(size = axis_text_size),
 				axis.text.y = element_text(size = axis_text_size))  + theme(
 	axis.title.x = element_text(size = title_size),
-		axis.title.y = element_text(size = title_size)) + theme(plot.title = element_text(size = title_size))
+		axis.title.y = element_text(size = title_size)) + theme(plot.title = element_text(size = title_size+5))
 	cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_size), )
+	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=(legend_size-2)))
 	
 
 	r <- readRDS(x)
@@ -275,15 +285,15 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 
 	combination.name <- paste0(drugA.name, " and ", drugB.name)
 
-	title.combination <- ggdraw() + draw_label(paste0(combination.name," Combination"), size = title_size+3, fontface='bold') #to left align use x = 0, hjust = 0
+	title.combination <- ggdraw() + draw_label(paste0(combination.name," Combination"), size = (title_size+6), fontface='bold') #to left align use x = 0, hjust = 0
 
 
 	if (sp){
 	title <- paste0("Time: ", drug.hr, " Hours")
 	}
 	#regression line
-	p <- ggplot(data, aes(x=gf, y=tf)) + geom_point() + mytheme + xlab(paste0("Estimate for ", combination.name, " Viability")) + ylab(paste0("Observed ", combination.name," Viability")) + geom_abline(slope=1, intercept=0, color=cbbPalette[8], linetype="dashed", size=1)
-	p <- p + annotate(geom = 'text', label = paste0('   GoF p-value = ', pround, '; \u03C1 = ', rho) , x = -Inf, y = 0, hjust = 0, vjust = 1, size=pvalue_cex)
+	p <- ggplot(data, aes(x=gf, y=tf)) + geom_point(size=2.4) + mytheme + xlab(paste0("Estimate for ", combination.name, " Viability")) + ylab(paste0("Observed ", combination.name," Viability")) + geom_abline(slope=1, intercept=0, color=cbbPalette[8], linetype="dashed", size=1.6)
+	p <- p + annotate(geom = 'text', label = paste0('   GoF p-value = ', pround, '; \u03C1 = ', rho) , x = -Inf, y = 5, hjust = 0, vjust = 1, size=(pvalue_cex+1))
 
 	error <- guess.final - true.values
 	heatmap <- true
@@ -327,8 +337,9 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 		plot <- plot + theme(axis.text.x = element_text(size = axis_text_size),
 					axis.text.y = element_text(size = axis_text_size))  + theme(
 		axis.title.x = element_text(size = title_size),
-			axis.title.y = element_text(size = title_size), legend.title=element_text(size=legend_size))
+			axis.title.y = element_text(size = title_size), legend.title=element_text(size=legend_size), legend.text=element_text(size=(legend_size)))
 		plot <- plot + theme(panel.background = element_rect(colour = "black", size=1.7))
+
 
 		if (sum(is.na(id.concs))==0){
 
@@ -342,18 +353,18 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 	      colnames(long.conc)[1] <- "drugA"
 
 	      long.conc$eq.conc <- as.character(round(long.conc$eq.conc, 2))
-	      long.conc$eq.conc <- paste0(long.conc$eq.conc, " \u00B5M")
+	      long.conc$eq.conc <- paste0(long.conc$eq.conc, "\n\u00B5M")
 	      mylevels.x <- unique(long.conc$drugB)
 	      mylevels.y <- unique(long.conc$drugA)
 	      long.conc$drugB2 <- factor(long.conc$drugB, mylevels.x[order(as.numeric(mylevels.x))])
 	      long.conc$drugA2 <- factor(long.conc$drugA, mylevels.y[order(as.numeric(mylevels.y))])
 
-	      plot2 <- ggplot(long.conc, aes(drugB2, drugA2)) +  geom_tile(aes(fill = id, width=0.95, height=0.95), size=2) + theme(
+	      plot2 <- ggplot(long.conc, aes(drugB2, drugA2)) +  geom_tile(aes(fill = id, width=0.95, height=0.95)) + theme(
 	          panel.grid.major = element_blank(),
 	          panel.grid.minor = element_blank(),
 	          panel.background = element_rect(fill = "transparent",colour = NA),
 	          plot.background = element_rect(fill = "transparent",colour = NA)
-	        )  + geom_text(aes(label=eq.conc))
+	        )  + geom_text(aes(label=eq.conc), size=(size_geom_text+1))
 
 
 	      plot2 <- plot2 + xlab(b.title) + ylab(a.title)  + scale_fill_manual(name = "", labels = c(paste0(drugA.name, " Equivalent Dose"), paste0(drugB.name, " Equivalent Dose")), values=c(cbbPalette[2], cbbPalette[3]))
@@ -395,7 +406,7 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 
 
 a <- pvalues.scatter(loc, loc2, legend_size, title_size, axis_text_size)
-d <- barplot.doses(dose.dir, sp.dose.dir, axis_text_size-2, title_size)
+d <- barplot.doses(dose.dir, sp.dose.dir, axis_text_size-2, title_size, size_geom_text)
 
 ex1 <- files[grepl("combo3/results5", files3)]
 ex2 <- files[grepl("combo2/results1", files3)]

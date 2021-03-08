@@ -15,17 +15,23 @@ source("figure_functions_clinical.R")
 
 
 ###########################################
-axis_text_size = 15
-legend_size = 14
-title_size = 18
-facet_text_size = 16
-label_size = 25
+#axis_text_size = 15
+#legend_size = 14
+#title_size = 18
+#facet_text_size = 16
+#label_size = 25
+
+axis_text_size = 16
+title_size = 20
+legend_size = 20
+facet_text_size = 18
+label_size = 27
 
 dir.to.clin <- "../raw-data"
 dir.to.clin.results <- "../results.clinical"
 
 xlab.wrap <- 60
-ylab.wrap <- 34
+ylab.wrap <- 27
 #############################################
 
 
@@ -65,11 +71,11 @@ fraction_figure <- function(dat, axis_text_size, legend_size, title_size, facet_
 	cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_size), )
 	
-	plot <- ggplot(int.panels, aes(x=A, y=B, color=online)) + geom_point() + facet_wrap(~rho, scales="free") + scale_color_manual(name="", labels=c("not on corr = 1 curve", "on corr = 1 curve"), values=cbbPalette) + guides(colour = guide_legend(nrow = 1)) + legend + mytheme + theme(strip.text=element_text(size=facet_text_size), strip.background = element_blank())
-	plot <- plot + xlab("Simulated Survival Times Under Drug A") + ylab("Simulated Survival Times Under Drug B")
+	plot <- ggplot(int.panels, aes(x=A, y=B, color=online)) + geom_point(size=2) + facet_wrap(~rho, scales="free") + scale_color_manual(name="", labels=c("not on corr = 1 curve", "on corr = 1 curve"), values=cbbPalette) + guides(colour = guide_legend(nrow = 1)) + legend + mytheme + theme(strip.text=element_text(size=facet_text_size), strip.background = element_blank())
+	plot <- plot + xlab("Simulated Survival Times Under Drug A") + ylab("Simulated Survival Times Under Drug B") 
 
-	plot2 <- ggplot(g, aes(x=rho, y=fraction)) + geom_point() + mytheme + xlab("Set Value of \u03c1 in Coin Simulation") + ylab("Fraction of points on the \u03c1 = 1 curve") + geom_abline(slope=1, intercept=0, color="blue", linetype="dashed", size=1)
-	plot2 <- plot2 + annotate(geom = 'text', label = paste0("   R-squared: ", rsq, ", p-value: ", pval) , x = -Inf, y = -0.15, hjust = 0, vjust = 1, size=4.7)
+	plot2 <- ggplot(g, aes(x=rho, y=fraction)) + geom_point(size=2.4) + mytheme + xlab("Set Value of \u03c1 in Coin Simulation") + ylab("Fraction of points on the \u03c1 = 1 curve") + geom_abline(slope=1, intercept=0, color="blue", linetype="dashed", size=1.6)
+	plot2 <- plot2 + annotate(geom = 'text', label = paste0("   R-squared: ", rsq, ", p-value: ", pval) , x = -Inf, y = -0.15, hjust = 0, vjust = 1, size=6)
 	
 	fig <- plot_grid(plot, plot2, labels="AUTO", label_size=label_size, ncol=2)
 
@@ -101,7 +107,7 @@ plot.fit.test <- function(j, coin=TRUE, title_size, axis_text_size, legend_size,
 	
 	l <- do.call(rbind, lapply(j, function(x) x$p))
 	l$rho <- paste0("Spearman Correlation: ", l$rho)
-	p <- ggplot(l, aes(x=time, y=val, color=type, linetype=type)) + facet_wrap(~rho, scales="free") + geom_line(size=1) + mytheme + legend  + guides(colour = guide_legend(nrow = 1), linetype=FALSE) + theme(strip.text=element_text(size=facet_text_size), strip.background = element_blank()) 
+	p <- ggplot(l, aes(x=time, y=val, color=type, linetype=type)) + facet_wrap(~rho, scales="free") + geom_line(size=1.6) + mytheme + legend  + guides(colour = guide_legend(nrow = 1), linetype=FALSE) + theme(strip.text=element_text(size=facet_text_size), strip.background = element_blank()) 
 	p <- p + xlab("Survival Time") + ylab("Progression Free Survival")
 
 	if (coin){
@@ -150,9 +156,9 @@ master_sim_comp_figure <- function(method, dat, title_size, axis_text_size, lege
 	} 
 
 	if (method=="coin"){
-		plot2 <- ggplot(v, aes(x=true.rho, y=guess.rho)) + geom_point(size=1.3) + mytheme + xlab(paste0("Set Value of \u03c1 in Coin Simulated Combination")) + ylab("Optimal Estimate of \u03b1 with Temporal CDA Model") + geom_abline(slope=1, intercept=0, color="blue", linetype="dashed", size=1)
+		plot2 <- ggplot(v, aes(x=true.rho, y=guess.rho)) + geom_point(size=2.4) + mytheme + xlab(paste0("Set Value of \u03c1 in Coin Simulated Combination")) + ylab("Optimal Estimate of \u03b1 with Temporal CDA Model") + geom_abline(slope=1, intercept=0, color="blue", linetype="dashed", size=1.6)
 	} else{
-		plot2 <- ggplot(v, aes(x=true.rho, y=guess.rho)) + geom_point(size=1.3) + mytheme + xlab(paste0("Set Value of \u03c1 in Window Swap Simulated Combination")) + ylab("Optimal Estimate of \u03b1 with Temporal CDA Model") + geom_abline(slope=1, intercept=0, color="blue", linetype="dashed", size=1)
+		plot2 <- ggplot(v, aes(x=true.rho, y=guess.rho)) + geom_point(size=2.4) + mytheme + xlab(paste0("Set Value of \u03c1 in Window Swap Simulated Combination")) + ylab("Optimal Estimate of \u03b1 with Temporal CDA Model") + geom_abline(slope=1, intercept=0, color="blue", linetype="dashed", size=1.6)
 	}
 	plot2 <- plot2 + annotate(geom = 'text', label = paste0("     R-squared = ", rsq, ", p-value = ", pval) , x = -Inf, y = -1.02, hjust = 0, vjust = 1, size=5)
 	fig <- plot_grid(p, plot2, labels="AUTO", label_size=label_size, ncol=2)
@@ -204,7 +210,7 @@ sim.results <- function(kB, nB, kA, nA, rho, axis_text_size, label_size, facet_t
 
 	#need more separation between different tyoes, should be visually nice
 
-	tatb <- ggplot(times.actual, aes(x=A, y=B, color=method)) + geom_point()+ xlim(0, 30) + ylim(0 ,30) + scale_color_manual(values=cbbPalette) + ggtitle(paste0("Spearman Correlation Value: ", rho))  + facet_wrap(~method, scales="free", labeller=labeller(method=drugs.labs))
+	tatb <- ggplot(times.actual, aes(x=A, y=B, color=method)) + geom_point(size=1.5)+ xlim(0, 30) + ylim(0 ,30) + scale_color_manual(values=cbbPalette) + ggtitle(paste0("Spearman Correlation Value: ", rho))  + facet_wrap(~method, scales="free", labeller=labeller(method=drugs.labs))
 	tatb <- tatb + mytheme + xlab(stringr::str_wrap("Simulated Pt. Survival Times under Drug A", width=xlab.wrap)) + ylab(stringr::str_wrap("Simulated Pt. Survival Times under Drug B", width=ylab.wrap)) + theme(strip.background =element_rect(fill="transparent")) +  theme(strip.text = element_text(size=facet_text_size)) + theme(legend.position = "none")
 
 
@@ -225,7 +231,7 @@ sim.results <- function(kB, nB, kA, nA, rho, axis_text_size, label_size, facet_t
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_size), )
 
 
-	curves <- ggplot(dat.long, aes(x=time, y=pfs, color=drug)) + geom_line(size=1.2) + mytheme + xlab("Time") + ylab("PFS") + ggtitle("Survival Curves Based On Simulated Data") + legend + scale_color_manual(values=cbbPalette, labels=c("Coin", "Window Swap")) + xlim(0, 30)
+	curves <- ggplot(dat.long, aes(x=time, y=pfs, color=drug)) + geom_line(size=1.45) + mytheme + xlab("Time") + ylab("PFS") + ggtitle("Survival Curves Based On Simulated Data") + legend + scale_color_manual(values=cbbPalette, labels=c("Coin", "Window Swap")) + xlim(0, 30)
 
 	out <- plot_grid(tatb, curves, labels="AUTO", label_size=label_size)
 
@@ -287,7 +293,7 @@ real.methods.comp <- function(rho, k, dir.to.clin, dir.to.clin.results,axis_text
 	names(drugs.labs) <- c("model",  "sim")
 	cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-	tatb <- ggplot(times.actual, aes(x=A, y=B, color=method)) + geom_point() + scale_color_manual(values=cbbPalette) + ggtitle(paste0("Spearman Correlation Value: ", rho))  + facet_wrap(~method, scales="free", labeller=labeller(method=drugs.labs)) 
+	tatb <- ggplot(times.actual, aes(x=A, y=B, color=method)) + geom_point(size=1.5) + scale_color_manual(values=cbbPalette) + ggtitle(paste0("Spearman Correlation Value: ", rho))  + facet_wrap(~method, scales="free", labeller=labeller(method=drugs.labs)) 
 	tatb <- tatb + mytheme + xlab(stringr::str_wrap(xlab.A, width=xlab.wrap)) + ylab(stringr::str_wrap(ylab.B, width=ylab.wrap)) + theme(strip.background =element_rect(fill="transparent")) +  theme(strip.text = element_text(size=facet_text_size)) + theme(legend.position = "none")
 
 	best.mono.tail <- max(tail(tib$drugA, 1), tail(tib$drugB, 1))
@@ -315,7 +321,7 @@ real.methods.comp <- function(rho, k, dir.to.clin, dir.to.clin.results,axis_text
 	library(stringi)
 	title <- str_wrap(paste0("Survival Curves Based On Clinical Trial Data: ", fullname), 65)
 
-	curves <- ggplot(tib.long, aes(x=time, y=pfs, color=drug)) + geom_line(size=1.2) + mytheme + xlab("Time") + ylab("PFS")  + legend + ggtitle(title) + scale_color_manual(values=cbbPalette, labels=c("Coin", "Window Swap"))
+	curves <- ggplot(tib.long, aes(x=time, y=pfs, color=drug)) + geom_line(size=1.45) + mytheme + xlab("Time") + ylab("PFS")  + legend + ggtitle(title) + scale_color_manual(values=cbbPalette, labels=c("Coin", "Window Swap"))
 
 	out2 <- plot_grid(tatb, curves, labels=c("C", "D"), label_size=label_size)
 	out2

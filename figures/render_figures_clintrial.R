@@ -13,12 +13,16 @@ renderSim <- FALSE
 #for figure 1
 trial.to.follow <- 15
 
-axis_text_size = 14
-title_font_size = 16
-legend_font_size = 12
-facet_font_size = 15
-pvalue_size_cex = 4.9
-label_font_size = 25
+axis_text_size = 16
+title_font_size = 20
+legend_font_size = 20
+facet_font_size = 16
+pvalue_size_cex = 6
+label_font_size = 27
+
+width.fig = 12
+height.fig = 15
+
 
 
 ###############################################
@@ -26,7 +30,7 @@ label_font_size = 25
 
 #dimensions are too big to reasonably apply the wrap title rule of str_wrap(x, width=50) rule
 #maybe have to drop the dimensions, and if so implement ^^
-walkthru <- function(k, dir.to.clin.results, dir.to.helper.functions, axis_text_size, title_font_size, legend_font_size, facet_font_size, label_font_size, pvalue_size_cex){
+walkthru <- function(k, dir.to.clin.results, dir.to.helper.functions, axis_text_size, title_font_size, legend_font_size, facet_font_size, label_font_size, pvalue_size_cex, width.fig, height.fig){
 
 	metares <- readRDS(file.path(dir.to.clin.results, "summary.rds"))
 	dirs <- list.dirs(dir.to.clin.results, recursive=FALSE, full.name=FALSE)
@@ -122,6 +126,7 @@ walkthru <- function(k, dir.to.clin.results, dir.to.helper.functions, axis_text_
 	tib.naive$drug <- factor(tib.naive$drug, levels = c(naive.levels[comb.naive], naive.levels[others.naive[1]], naive.levels[others.naive[2]]), ordered = TRUE)
 	tib$drug <- factor(tib$drug, levels = c(orig.levels[mod], orig.levels[comb], orig.levels[others[1]], orig.levels[others[2]]), ordered = TRUE)
 
+	###start plotting
 
 
 	mytheme <- theme(
@@ -133,22 +138,27 @@ walkthru <- function(k, dir.to.clin.results, dir.to.helper.functions, axis_text_
 	axis.title.x = element_text(size = title_font_size),
 		axis.title.y = element_text(size = title_font_size)) + theme(plot.title = element_text(size = title_font_size))
 
-	plt.all <- ggplot(tib, aes(x=time, y=survival)) + geom_smooth(aes(ymin=lower, ymax=upper, color=drug), stat="identity") + mytheme + xlab("Time (months)") + ylab("PFS") + ggtitle(filtered.meta$fullname)
+	plt.all <- ggplot(tib, aes(x=time, y=survival)) + geom_smooth(aes(ymin=lower, ymax=upper, color=drug), stat="identity", size=1.4) + mytheme + xlab("Time (months)") + ylab("PFS") 
+
+	#+ ggtitle(filtered.meta$fullname)
 
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_font_size), )
 
-	plt.naive <- ggplot(tib.naive, aes(x=time, y=survival)) + geom_smooth(aes(ymin=lower, ymax=upper, color=drug), stat="identity") + mytheme + xlab("Time (months)") + ylab("PFS") + ggtitle(filtered.meta$fullname)
+	plt.naive <- ggplot(tib.naive, aes(x=time, y=survival)) + geom_smooth(aes(ymin=lower, ymax=upper, color=drug), size=1.4, stat="identity") + mytheme + xlab("Time (months)") + ylab("PFS") 
+
+	#+ ggtitle(filtered.meta$fullname)
 
 	cbbPalette.all <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 	cbbPalette.naive <- cbbPalette.all[-1]
 
-	plt.naive <- plt.naive + legend + scale_color_manual(values=cbbPalette.naive)+ guides(colour = guide_legend(nrow = 2))
-	plt.all <- plt.all + legend + scale_color_manual(values=cbbPalette.all)+ guides(colour = guide_legend(nrow = 2))
+	plt.naive <- plt.naive + legend + scale_color_manual(values=cbbPalette.naive)+ guides(colour = guide_legend(nrow = 1)) + theme(legend.key = element_rect(colour = "transparent", fill = "white"))
+	plt.all <- plt.all + legend + scale_color_manual(values=cbbPalette.all)+ guides(colour = guide_legend(nrow = 1)) + theme(legend.key = element_rect(colour = "transparent", fill = "white"))
 
 	cone.wide$correlation <- as.numeric(cone.wide$correlation)
 	legend <- theme(legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_font_size), legend.title=element_text(size=(legend_font_size+1)) )
 
-	cone.plt <- ggplot(cone.wide) + geom_line(aes(x=time, y=survival, group=correlation, color=correlation), size=1.4) + mytheme + scale_color_gradientn(name="Correlation", colours=rainbow(length(poss_rho))) + xlab("Time (months)") + ylab("PFS") + geom_line(aes(x=time, y=actual, linetype=id), size=1.4) +  scale_linetype_manual(values=c("dashed"),guide="legend", name="", labels=c("True Combination")) + legend + ggtitle("Cone of Possible Estimated Combination Survival Curves")
+	cone.plt <- ggplot(cone.wide) + geom_line(aes(x=time, y=survival, group=correlation, color=correlation), size=1.4) + mytheme + scale_color_gradientn(name="Correlation", colours=rainbow(length(poss_rho))) + xlab("Time (months)") + ylab("PFS") + geom_line(aes(x=time, y=actual, linetype=id), size=1.4) +  scale_linetype_manual(values=c("dashed"),guide="legend", name="", labels=c("Obs.\nComb.")) + legend 
+	#+ ggtitle("Cone of Possible Estimated Combination Survival Curves")
 
 
 	#active development
@@ -166,30 +176,31 @@ walkthru <- function(k, dir.to.clin.results, dir.to.helper.functions, axis_text_
 
 	roll.ta.tb2 <- roll.ta.tb2 %>% mutate(color=ifelse(pos_line, "a", ifelse(neg_line, "b", "c")))
 
-	plt.all <- plt.all + annotate(geom = 'text', label = paste0('   p-value = ', pvalue) , x = -Inf, y = 0, hjust = 0, vjust = 1, size=pvalue_size_cex)
+	plt.all <- plt.all + annotate(geom = 'text', label = paste0('   p-value = ', pvalue) , x = -Inf, y = 0.1, hjust = 0, vjust = 1, size=pvalue_size_cex)
 
 	cbbPalette <- c( "#0072B2", "#D55E00", "#000000","#009E73", "#F0E442", "#CC79A7",  "#E69F00", "#56B4E9")
 
 	roll.ta.tb2$id <- paste0("Correlation: ", roll.ta.tb2$id)
 
-	tatb.plt <- ggplot(roll.ta.tb2, aes(x=tA, y=tB, color=color)) + geom_point() + facet_wrap(~id, scales="free") + mytheme + xlab(paste0("Simualted Survival Times (mo.) for ",filtered.meta$A_name, " Patients")) + ylab(paste0("Simulated Survival Times (mo.) \n for ",filtered.meta$B_name, " Patients")) + theme(strip.text=element_text(size=facet_font_size)) + theme(axis.title.x = element_text(size = title_font_size), axis.title.y = element_text(size = title_font_size))
+	tatb.plt <- ggplot(roll.ta.tb2, aes(x=tA, y=tB, color=color)) + geom_point() + facet_wrap(~id, scales="free") + mytheme + xlab(paste0("Simulated Survival Times \nfor ",filtered.meta$A_name, " Patients")) + ylab(paste0("Simulated Survival Times \nfor ",filtered.meta$B_name, " Patients")) + theme(strip.text=element_text(size=facet_font_size)) + theme(axis.title.x = element_text(size = title_font_size), axis.title.y = element_text(size = title_font_size)) + theme(axis.text.x=element_blank(), axis.text.y=element_blank(), axis.ticks.x=element_blank(), axis.ticks.y=element_blank()) 
+
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_font_size), )
 
-	tatb.plt <- tatb.plt + scale_color_manual(name="", labels=c("on corr = 1 curve", "on corr = -1 curve", "neither"), values=cbbPalette) + guides(colour = guide_legend(nrow = 1)) + legend
+	tatb.plt <- tatb.plt + scale_color_manual(name="", labels=c("on corr = 1 curve", "on corr = -1 curve", "neither"), values=cbbPalette) + guides(colour = guide_legend(nrow = 2)) + legend
 
 	middle_row <- plot_grid(cone.plt, tatb.plt, labels=c("B", "C"), nrow=1, label_size=label_font_size)
 
 	fig1 <- plot_grid(plt.naive, middle_row, plt.all, labels=c("A", "", "D"), label_size=label_font_size, ncol=1)
 
-	ggsave(fig1, device=cairo_pdf, filename="figure1.pdf", width=15, height=24, units="in", dpi=320)
+	ggsave(fig1, device=cairo_pdf, filename="figure1.pdf", width=width.fig, height=height.fig, units="in", dpi=320)
 
 	return(fig1)
 }
 
-walkthru(trial.to.follow, "../results.clinical", "../scripts",axis_text_size, title_font_size, legend_font_size, facet_font_size, label_font_size, pvalue_size_cex)
+walkthru(trial.to.follow, "../results.clinical", "../scripts",axis_text_size, title_font_size, legend_font_size, facet_font_size, label_font_size, pvalue_size_cex, width.fig, height.fig)
 
 #FIGURE RENDER ------------- panels of clinical trials figure ---------------
-panels_clinical_trials <- function(dir.to.clin.results, sim.figs=FALSE, title_font_size, axis_text_size, pvalue_size_cex, legend_font_size, nwidth=43){
+panels_clinical_trials <- function(dir.to.clin.results, sim.figs=FALSE, title_font_size, axis_text_size, pvalue_size_cex, legend_font_size=14, nwidth=40){
 
 	metares <- readRDS(file.path(dir.to.clin.results, "summary.rds"))
 
@@ -208,6 +219,19 @@ panels_clinical_trials <- function(dir.to.clin.results, sim.figs=FALSE, title_fo
 
 		idx <- dirs[k]
 		filtered.meta <- metares %>% filter(name==idx)
+
+		reformat_comb1 <- "Irinotecan, Bevacizumab and Panitumumab in Advanced Colorectal Cancer"
+		reformat_comb2 <- "Oxaliplatin, Bevacizumab and Panitumumab in Advanced Colorectal Cancer"
+
+		if (filtered.meta$fullname == reformat_comb1 ){
+
+			filtered.meta$fullname <- "Irinotecan, Bevacizumab & Panitumumab in Advanced Colorectal Cancer"
+		}
+
+		if (filtered.meta$fullname == reformat_comb2 ){
+			filtered.meta$fullname <- "Oxaliplatin, Bevacizumab & Panitumumab in Advanced Colorectal Cancer"
+		}
+
 		rho.model <- round(filtered.meta$rho.model, 3)
 		rho.upper <- round(filtered.meta$upper, 3)
 		rho.lower <- round(filtered.meta$lower, 3)
@@ -271,7 +295,7 @@ panels_clinical_trials <- function(dir.to.clin.results, sim.figs=FALSE, title_fo
 			cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 			plt <- plt + legend + scale_color_manual(values=cbbPalette) + guides(colour = guide_legend(nrow = 2))
-			plt <- plt + annotate(geom = 'text', label = paste0('   p-value = ', pvalue) , x = -Inf, y = 0, hjust = 0, vjust = 1, size=4.4)
+			plt <- plt + annotate(geom = 'text', label = paste0('   p-value = ', pvalue) , x = -Inf, y = 0.15, hjust = 0, vjust = 1, size=4.7)
 			store.plts[[k]] <- plt
 
 			next
@@ -326,7 +350,7 @@ panels_clinical_trials <- function(dir.to.clin.results, sim.figs=FALSE, title_fo
 		) + theme(axis.line = element_line(color="black", size = 0.75)) + theme(axis.text.x = element_text(size = axis_text_size),
 					axis.text.y = element_text(size = axis_text_size))  + theme(
 		axis.title.x = element_text(size = title_font_size),
-			axis.title.y = element_text(size = title_font_size)) + theme(plot.title = element_text(size = title_font_size))
+			axis.title.y = element_text(size = title_font_size)) + theme(plot.title = element_text(size = (title_font_size-1)))
 		plt <- ggplot(tib, aes(x=time, y=survival)) + geom_smooth(aes(ymin=lower, ymax=upper, color=drug), stat="identity") + mytheme + xlab("Time (months)") + ylab("PFS") + ggtitle(stringr::str_wrap(filtered.meta$fullname, width=nwidth))
 		legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_font_size), )
 
@@ -352,7 +376,8 @@ panels_clinical_trials <- function(dir.to.clin.results, sim.figs=FALSE, title_fo
 
 }
 
-panels_clinical_trials("../results.clinical", FALSE, title_font_size, axis_text_size, pvalue_size_cex, legend_font_size)
+
+panels_clinical_trials("../results.clinical", FALSE, title_font_size, axis_text_size, pvalue_size_cex=4.9)
 
 if (renderSim){
 	panels_clinical_trials("../results.clinical", sim.figs=TRUE, title_font_size, axis_text_size, pvalue_size_cex, legend_font_size)
@@ -416,7 +441,7 @@ dotplot <- function(dir.to.clin.results, axis_text_size, title_font_size, legend
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_font_size), )
 
 	nonsig.rows <- metares %>% filter(p.model > .05) %>% pull(id)
-	plot <- plot + geom_point(data = metares %>% filter(id %in% nonsig.rows), aes(x=id, y=rho.model, color="b"), size=2.5) + scale_color_manual(name="", labels=c("CDA (p-value > 0.05)", "Non-CDA (p-value < 0.05)"), values=c("purple", "black")) + legend + guides(colour = guide_legend(nrow = 1))
+	plot <- plot + geom_point(data = metares %>% filter(id %in% nonsig.rows), aes(x=id, y=rho.model, color="b"), size=2.5) + scale_color_manual(name="", labels=c("CDA (p-value > 0.05)", "Non-CDA (p-value < 0.05)"), values=c("purple", "black")) + legend + guides(colour = guide_legend(nrow = 2))
 	
 	#highlight y labels another option for labeling non-sig rows
 	#plot + theme(axis.text.y = element_text(color=rep("red", 18)))
@@ -426,7 +451,7 @@ dotplot <- function(dir.to.clin.results, axis_text_size, title_font_size, legend
 
 #i is the # of the trial - either 14, 2, 4, 8 - maybe not 8 unclear whether label is gc or gemcitabine
 # we could compute some sort of CI for placebo by shuffling A and AP in the script that generates results of placebo...
-placebo.plot <- function(i, dir.to.placebo, off=FALSE, axis_text_size, legend_font_size, title_font_size){
+placebo.plot <- function(i, dir.to.placebo, off=FALSE, axis_text_size, legend_font_size, title_font_size, nwidth=43){
 	dirs <- list.dirs(dir.to.placebo, recursive=FALSE)
 	match <- grepl(as.character(i), dirs)
 	if (sum(match) <= 0){
@@ -470,7 +495,8 @@ placebo.plot <- function(i, dir.to.placebo, off=FALSE, axis_text_size, legend_fo
 	axis.title.x = element_text(size = title_font_size),
 		axis.title.y = element_text(size = title_font_size)) + theme(plot.title = element_text(size = title_font_size))
 
-	plt <- ggplot(tib, aes(x=time, y=survival, color=drug))  + geom_line(size=1.3) + mytheme + xlab("Time (months)") + ylab("PFS") + ggtitle(s.f$fullname)
+	plt <- ggplot(tib, aes(x=time, y=survival, color=drug))  + geom_line(size=1.3) + mytheme + xlab("Time (months)") + ylab("PFS") + ggtitle(stringr::str_wrap(s.f$fullname, width=nwidth))
+
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_font_size), )
 
 	cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
@@ -487,7 +513,8 @@ placebo.plot <- function(i, dir.to.placebo, off=FALSE, axis_text_size, legend_fo
 }
 
 
-f <- dotplot("../results.clinical", axis_text_size, title_font_size, legend_font_size)
+
+f <- dotplot("../results.clinical", axis_text_size, title_font_size, legend_font_size-4)
 
 store.plts <- readRDS("MODEL_panels_clinical_trials.rds")
 
@@ -497,7 +524,7 @@ a <- store.plts[[model.trials.to.show[1]]]
 b <- store.plts[[model.trials.to.show[2]]]
 c <- store.plts[[model.trials.to.show[3]]]
 d <- store.plts[[model.trials.to.show[4]]]
-e <- store.plts[[model.trials.to.show[[5]]]]
+e <- store.plts[[model.trials.to.show[5]]]
 
 fig2 <- plot_grid(f, a, b, c, d, e, label_size=label_font_size, labels="AUTO", ncol=2)
 
@@ -543,7 +570,7 @@ for (y in 1:length(fig.idxs)){
 
 	
 	model.sup <- plot_grid(a,b,c,d,label_size=label_font_size, labels="AUTO", ncol=2)
-	ggsave(model.sup, device=cairo_pdf, filename=paste0("supplement/model_results_", names(fig.idxs)[y], ".pdf"), width=12, height=12, units="in", dpi=320)
+	ggsave(model.sup, device=cairo_pdf, filename=paste0("supplement/model_results_", names(fig.idxs)[y], ".pdf"), width=12.65, height=12.65, units="in", dpi=320)
 	
 }
 
