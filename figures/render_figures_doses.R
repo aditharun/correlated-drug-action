@@ -74,6 +74,8 @@ organize.doses <- function(x){
 
 barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, size_geom_text){
 
+	p.cutoff <- 0.01
+
 	results <- read_csv(list.files(dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na()
 	results2 <- read_csv(list.files(sp.dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na() %>% select(-c(hours,name))
 
@@ -98,11 +100,11 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, siz
 
 	k <- ggplot(final, aes(x=trial_id, y=final.rho+0.001)) + geom_bar(stat="identity") 
 
-	goodfit <- final %>% filter(t.final > 0.05) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.007, final.rho+0.007))
+	goodfit <- final %>% filter(t.final > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.007, final.rho+0.007))
 	label.df <- data.frame(trial_id = goodfit %>% pull(trial_id),
 	                       final.rho = goodfit %>% pull(p))
 
-	eobfit <- final %>% filter(eob.t > 0.05) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.025, final.rho+0.02))
+	eobfit <- final %>% filter(eob.t > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.025, final.rho+0.02))
 	label.df2 <- data.frame(trial_id = eobfit %>% pull(trial_id),
 	                       final.rho = eobfit %>% pull(p))
 
@@ -138,10 +140,13 @@ pvalues.scatter <- function(loc, loc2, legend_size, title_size, axis_text_size){
 	library(readxl)
 	library(ggExtra)
 
+	p.cutoff <- 0.01
+
 	doses.results <- read_csv(file.path(loc, "doses.results.csv"))
 	sp.doses.results <- read_csv(file.path(loc2, "sp.doses.results.csv"))
 
-	threshold <- -log(0.05, base=10)
+	threshold <- -log(p.cutoff, base=10)
+
 	doses.results <- doses.results %>% mutate(transformed.fit.p=-log(t.final, base=10), transformed.eob.p=-log(eob.t, base=10))
 	sp.doses.results <- sp.doses.results %>% mutate(transformed.fit.p=-log(t.final, base=10), transformed.eob.p=-log(eob.t, base=10))
 
@@ -171,9 +176,9 @@ pvalues.scatter <- function(loc, loc2, legend_size, title_size, axis_text_size){
 		doses.results$guide[k] <- item
 	}
 
-	#sum(doses.results$transformed.fit.p <= threshold) -- 20 / 26 is good for Fit
-	#sum(doses.results$transformed.eob.p <= threshold) -- 17 / 26 is good for EOB
-	#sum(doses.results$guide=="Fit and EOB is good") --- 11 / 26 is good for both
+	print(sum(doses.results$transformed.fit.p <= threshold)) #-- 20 / 26 is good for Fit
+	print(sum(doses.results$transformed.eob.p <= threshold)) #-- 17 / 26 is good for EOB
+	print(sum(doses.results$guide=="Fit and EOB is good")) #--- 11 / 26 is good for both
 
 
 	mytheme <- theme(

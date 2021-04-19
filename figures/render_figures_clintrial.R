@@ -421,6 +421,9 @@ if (renderSim){
 
 #Dot plot w/ CI showing rho model values
 dotplot <- function(dir.to.clin.results, axis_text_size, title_font_size, legend_font_size){
+
+	p.cutoff <- .01
+
 	metares <- readRDS(file.path(dir.to.clin.results, "summary.rds"))
 	metares$id <- as.numeric(gsub("([0-9]+).*$", "\\1", metares$name))
 	metares <- metares %>% arrange(desc(id))
@@ -440,8 +443,8 @@ dotplot <- function(dir.to.clin.results, axis_text_size, title_font_size, legend
 	plot <- ggplot(metares, aes(x=id, y=rho.model)) + geom_point(aes(color="c"), size=1.5) + geom_errorbar(aes(x=id, ymin=lower, ymax=upper), color="black")  + ylab("Correlation of Model Estimate") + xlab("Trial ID") + mytheme  + scale_x_continuous(breaks=seq(1,18,1)) + coord_flip()
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_font_size), )
 
-	nonsig.rows <- metares %>% filter(p.model > .05) %>% pull(id)
-	plot <- plot + geom_point(data = metares %>% filter(id %in% nonsig.rows), aes(x=id, y=rho.model, color="b"), size=2.5) + scale_color_manual(name="", labels=c("CDA (p-value > 0.05)", "Non-CDA (p-value < 0.05)"), values=c("purple", "black")) + legend + guides(colour = guide_legend(nrow = 2))
+	nonsig.rows <- metares %>% filter(p.model > p.cutoff) %>% pull(id)
+	plot <- plot + geom_point(data = metares %>% filter(id %in% nonsig.rows), aes(x=id, y=rho.model, color="b"), size=2.5) + scale_color_manual(name="", labels=c("CDA (p-value > 0.01)", "Non-CDA (p-value < 0.01)"), values=c("purple", "black")) + legend + guides(colour = guide_legend(nrow = 2))
 	
 	#highlight y labels another option for labeling non-sig rows
 	#plot + theme(axis.text.y = element_text(color=rep("red", 18)))
