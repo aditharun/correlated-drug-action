@@ -3,6 +3,7 @@ library(tidyverse)
 library(readxl)
 library(ggpubr)
 library(cowplot)
+library(writexl)
 source("figure_functions_dose.R")
 
 
@@ -57,7 +58,7 @@ organize.doses <- function(x){
 	    n <- length(unwrap.true)
 	}
 
-	pvalue <- ostt(unwrap.guess.final, unwrap.true)$p
+	pvalue <- t.test(unwrap.guess.final, unwrap.true, paired=TRUE, alternative="two.sided")$p.value
 
 	sp <- grepl("sp", x)
 
@@ -84,9 +85,9 @@ format.data <- function(dose.dir, sp.dose.dir){
 	colnames(names) <- c("pvalue", "name")
 
 
-	results$name <- unlist(lapply(as.numeric(results$t.final), function(x) names$name[which.min(abs(x - as.numeric(names$pvalue)))]))
+	results$name <- unlist(lapply(as.numeric(results$gof.p), function(x) names$name[which.min(abs(x - as.numeric(names$pvalue)))]))
 
-	results <- results %>% select(name, init.rho, final.rho, outliers, t.final, eob.t) %>% rename(n.outliers=outliers, gof.p=t.final, eob.p=eob.t, pre.outlier.rho=init.rho, post.outlier.rho=final.rho)
+	results <- results %>% select(name, init.rho, final.rho, outliers, gof.p, eob.p) %>% rename(n.outliers=outliers, gof.p=gof.p, eob.p=eob.p, pre.outlier.rho=init.rho, post.outlier.rho=final.rho)
 
 	results
 

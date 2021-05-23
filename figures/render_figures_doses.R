@@ -58,7 +58,7 @@ organize.doses <- function(x){
 	    n <- length(unwrap.true)
 	}
 
-	pvalue <- ostt(unwrap.guess.final, unwrap.true)$p
+	pvalue <- t.test(unwrap.guess.final, unwrap.true, paired=TRUE, alternative="two.sided")$p.value
 
 	sp <- grepl("sp", x)
 
@@ -91,7 +91,7 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, siz
 
 	names$pvalue <- as.numeric(names$pvalue)
 
-	final <- results %>% left_join(names, by=c("t.final"="pvalue")) %>% mutate(trial_id=1:n()) %>% select(trial_id, name, final.rho, init.rho, outliers, t.final, eob.t)
+	final <- results %>% left_join(names, by=c("gof.p"="pvalue")) %>% mutate(trial_id=1:n()) %>% select(trial_id, name, final.rho, init.rho, outliers, eob.p, gof.p)
 
 	write.csv(final, "supplement/doses.results.csv")
 
@@ -100,11 +100,11 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, siz
 
 	k <- ggplot(final, aes(x=trial_id, y=final.rho+0.001)) + geom_bar(stat="identity") 
 
-	goodfit <- final %>% filter(t.final > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.007, final.rho+0.007))
+	goodfit <- final %>% filter(gof.p > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.007, final.rho+0.007))
 	label.df <- data.frame(trial_id = goodfit %>% pull(trial_id),
 	                       final.rho = goodfit %>% pull(p))
 
-	eobfit <- final %>% filter(eob.t > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.025, final.rho+0.02))
+	eobfit <- final %>% filter(eob.p > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.025, final.rho+0.02))
 	label.df2 <- data.frame(trial_id = eobfit %>% pull(trial_id),
 	                       final.rho = eobfit %>% pull(p))
 
@@ -147,8 +147,8 @@ pvalues.scatter <- function(loc, loc2, legend_size, title_size, axis_text_size){
 
 	threshold <- -log(p.cutoff, base=10)
 
-	doses.results <- doses.results %>% mutate(transformed.fit.p=-log(t.final, base=10), transformed.eob.p=-log(eob.t, base=10))
-	sp.doses.results <- sp.doses.results %>% mutate(transformed.fit.p=-log(t.final, base=10), transformed.eob.p=-log(eob.t, base=10))
+	doses.results <- doses.results %>% mutate(transformed.fit.p=-log(gof.p, base=10), transformed.eob.p=-log(eob.p, base=10))
+	sp.doses.results <- sp.doses.results %>% mutate(transformed.fit.p=-log(gof.p, base=10), transformed.eob.p=-log(eob.p, base=10))
 
 	doses.results <- doses.results %>% drop_na()
 	sp.doses.results <- sp.doses.results %>% drop_na()
@@ -194,7 +194,7 @@ pvalues.scatter <- function(loc, loc2, legend_size, title_size, axis_text_size){
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_size), ) 
 	cbbPalette <- c( "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-	plot <- ggplot(doses.results, aes(x=transformed.fit.p, y=transformed.eob.p, color=guide)) + geom_point(size = 2.4) + geom_hline(yintercept=threshold, linetype="dashed", color="grey", size=1.6) + geom_vline(xintercept=threshold, linetype="dashed", color="grey", size=1.6) + mytheme + xlab("-log10 p-value for GoF") + ylab("-log10 p-value for EOB") + legend + scale_color_manual(values=cbbPalette) + guides(colour = guide_legend(nrow = 2))
+	plot <- ggplot(doses.results, aes(x=transformed.fit.p, y=transformed.eob.p, color=guide)) + geom_point(size = 2.4) + geom_hline(yintercept=threshold, linetype="dashed", color="grey", size=1.6) + geom_vline(xintercept=threshold, linetype="dashed", color="grey", size=1.6) + mytheme + xlab("-log10 p-value for GoF") + ylab("-log10 p-value for EOB") + legend + scale_color_manual(values=cbbPalette[-4]) + guides(colour = guide_legend(nrow = 2))
 	
 	#for 2 rows of legend instead of 1
 	#plot <- plot +  guides(color = guide_legend(nrow = 2))
@@ -269,12 +269,12 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 	    n <- length(unwrap.true)
 	}
 
-	pvalue <- ostt(unwrap.guess.final, unwrap.true)$p
+	pvalue <- t.test(unwrap.guess.final, unwrap.true, paired=TRUE, alternative="two.sided")$p.value
 
 	sp.doses.results <- read_csv(paste0(sp.dose.dir, "/sp.doses.results.csv")) %>% as_tibble() %>% drop_na()
 	doses.results <- read_csv(paste0(dose.dir, "/doses.results.csv")) %>% as_tibble() %>% drop_na()
 
-	ps <- c(sp.doses.results$t.final, doses.results$t.final)
+	ps <- c(sp.doses.results$gof.p, doses.results$gof.p)
 	rs <- c(sp.doses.results$final.rho, doses.results$final.rho)
 
 	rho <- rs[which.min(abs(ps-pvalue))]
@@ -300,7 +300,10 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 	p <- ggplot(data, aes(x=gf, y=tf)) + geom_point(size=2.4) + mytheme + xlab(paste0("Estimate for ", combination.name, " Viability")) + ylab(paste0("Observed ", combination.name," Viability")) + geom_abline(slope=1, intercept=0, color=cbbPalette[8], linetype="dashed", size=1.6)
 	p <- p + annotate(geom = 'text', label = paste0('   GoF p-value = ', pround, '; \u03C1 = ', rho) , x = -Inf, y = 5, hjust = 0, vjust = 1, size=(pvalue_cex+1))
 
-	error <- guess.final - true.values
+	#EOCDA definition is estimated - observed (so + = synergy (red), - = antagonism (blue) )
+	error <-  guess.final - true.values 
+
+
 	heatmap <- true
 	coln <- dim(heatmap)[2]
 	colormap <- heatmap
@@ -392,9 +395,13 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 				plot <- plot + ggtitle(title)
 				plot2 <- plot2 + ggtitle(title)
 			}
-			c("1", "2", "3")
 
-			fp <- plot_grid(plot, p, plot2, labels=item_labels,label_size=label_size, nrow=1)
+			#uncomment for minimum individual equivalent dose
+			#fp <- plot_grid(plot, p, plot2, labels=item_labels,label_size=label_size, nrow=1)
+
+
+			fp <- plot_grid(plot, p, labels=item_labels, label_size=label_size, nrow=1)
+
 		} else{
 
 			if (sp){
@@ -417,10 +424,10 @@ ex1 <- files[grepl("combo3/results5", files3)]
 ex2 <- files[grepl("combo2/results1", files3)]
 
 
-b <- dose.maps.plots(dose.dir, sp.dose.dir, ex1, c("C", "D", "E"),  title_size, axis_text_size, legend_size, label_size, pvalue_cex)
-c <-  dose.maps.plots(dose.dir, sp.dose.dir, ex2, c("F", "G", "H"),  title_size, axis_text_size, legend_size, label_size, pvalue_cex)
+b <- dose.maps.plots(dose.dir, sp.dose.dir, ex1, c("C", "D"),  title_size, axis_text_size, legend_size, label_size, pvalue_cex)
+c <-  dose.maps.plots(dose.dir, sp.dose.dir, ex2, c("E", "F"),  title_size, axis_text_size, legend_size, label_size, pvalue_cex)
 
-figure_dose <- plot_grid(plot_grid(d, a, labels="AUTO", label_size=label_size), b, c, labels=c("", "", ""), label_size=label_size, ncol=1)
+figure_dose <- plot_grid(plot_grid(d, a, labels="AUTO", label_size=label_size), b, c, labels=c("", ""), label_size=label_size, ncol=1)
 ggsave(figure_dose, device=cairo_pdf, filename="figure3.pdf", width=20, height=30, units="in", dpi=320)
 
 
@@ -452,19 +459,22 @@ assign_priority <- function(x, dose.dir, sp.dose.dir){
 	    unwrap.true <- unwrap.true[-outlier]
 	    n <- length(unwrap.true)
 	}
-	pvalue <- ostt(unwrap.guess.final, unwrap.true)$p
+	pvalue <- t.test(unwrap.guess.final, unwrap.true, paired=TRUE, alternative="two.sided")$p.value
 	sp.doses.results <- read_csv(paste0(sp.dose.dir, "/sp.doses.results.csv")) %>% as_tibble() %>% drop_na()
 	doses.results <- read_csv(paste0(dose.dir, "/doses.results.csv")) %>% as_tibble() %>% drop_na()
-	ps <- c(sp.doses.results$t.final, doses.results$t.final)
+	ps <- c(sp.doses.results$gof.p, doses.results$gof.p)
 	rs <- c(sp.doses.results$final.rho, doses.results$final.rho)
 	rho <- rs[which.min(abs(ps-pvalue))]
 	rho <- round(rho, 2)
 
-	if (rho < 0){
-		n.panels <- 2
-	} else{
-		n.panels <- 3
-	}
+	n.panels <- 2
+
+	#uncomment for minimum individual eqiuvalent dose
+	#if (rho < 0){
+		#n.panels <- 2
+	#} else{
+		#n.panels <- 3
+	#}
 
 	c(n.panels, sp)
 }

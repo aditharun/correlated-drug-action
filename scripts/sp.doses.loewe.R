@@ -11,7 +11,7 @@ source("functions_dose_space.R")
 path.to.data <- file.path("..", "raw-data", "special_doses")
 
 ###Location to write out data
-outdir <- file.path(indir, "results.cell.line", "sp.doses.results.Bliss.Loewe")
+outdir <- file.path("..", "results.cell.line", "sp.doses.results.Bliss.Loewe")
 
 ############################################################################
 
@@ -20,15 +20,27 @@ filenames <- list.files(path.to.data, full.names=TRUE, pattern="*.xlsx")
 
 fit <- function(dB, dA, kB, kA, nA, nB, D_A, D_B, p, A, B){
   if (p >= 0 ){
-    if (loewe.f(dA, dB, kB, nB, kA, nA, p)){
+    if (loewe.f(dA, dB, kB, nB, kA, nA, p, A, B)){
         #val <-  ((D_A*D_B) + ((D_A)*(1 - D_B)*(p)))
-        new.conc <- dB + p*f.i(dA, kA, nA, nB, kB)
+
+        #uncomment for eq65
+        #new.conc <- dB + p*f.i(dA, kA, nA, nB, kB)
+
+        #for eq66
+        new.conc <- dB + f.i(dA, kA, nA, nB, kB)
+
+
         extra <- B$surv[which.min(abs(B$dose-new.conc))]
         val <- ((D_A * D_B) * (1-p) ) + extra
         label.conc <- "B"
       }
       else {
-        new.conc <- dA + p*f(dB, kB, nB, nA, kA)
+
+        #uncomment for eq65
+        #new.conc <- dA + p*f(dB, kB, nB, nA, kA)
+
+        #for eq66
+        new.conc <- dA + f(dB, kB, nB, nA, kA)
         label.conc <- "A"
         extra <- A$surv[which.min(abs(A$dose-new.conc))]
         val <- ((D_A*D_B)*(1-p) ) + extra
@@ -248,64 +260,29 @@ each.combination <- function(i, j, filenames, outdir2){
       n <- length(unwrap.true)
     }
 
-    out.0 <- ostt(unwrap.guess0, unwrap.true)
-    out.final <- ostt(unwrap.guess.final, unwrap.true)
+  #two sample paired t test between unwrap.true and unwrap.guess.final (result: gof.p)
 
-    comparator <- sum(out.0$p < 0.05) +  sum(out.final$p < 0.05)
+    gof.p <- t.test(unwrap.guess.final, unwrap.true, paired=TRUE, alternative="two.sided")
 
-    if (comparator==1){
-      concordance <- FALSE
-    } else{
-      concordance <- TRUE
-    }
+    #two sample paired t test between unwrap.true and unwrap.guess0 (result: eob.p)
 
-    thresh.0 <- thresh(unwrap.guess0, unwrap.true)
-    thresh.final <- thresh(unwrap.guess.final, unwrap.true)
+    eob.p <- t.test(unwrap.guess0, unwrap.true, paired=TRUE, alternative="two.sided")
 
-    eob.z <- twosample.ztest(unwrap.true, unwrap.guess0, unwrap.guess.final)
-    eob.t <- twosample.ztest(unwrap.true, unwrap.guess0, unwrap.guess.final, TRUE)
+    #chart.file <- file.path(outdir, paste0(j, ".plot.pdf"))
+    #pdf(chart.file)
 
+    #plot(hist(out.0$res, 15), xlab="residual p=0 case w/ true values",main=combinedname )
+    #plot(hist(out.final$res, 15), xlab="residual p=p_opt w/ true values", main=combinedname)
 
-    z.0 <- onesample.z.test(unwrap.guess0,unwrap.true)
-    z.final <- onesample.z.test(unwrap.guess.final, unwrap.true)
+    #plot(density(out.0$res), xlab="residual p=0 case w/ true values",main=combinedname )
+    #plot(density(out.final$res), xlab="residual p=p_opt w/ true values", main=combinedname)
 
+    #plot(unwrap.guess0, unwrap.true,pch=16,col="blue", main=combinedname, xlab="rho=0", ylab="experimental values")
+    #abline(a=0, b=1)
 
-
-    if (aic(unwrap.true,unwrap.guess0,1) < aic(unwrap.true,unwrap.guess.final,1)){
-      print("EOB is better model")
-    }
-
-
-    p.optrho <- chisq(unwrap.true, unwrap.guess.final, n)
-    p.zerorho <- chisq(unwrap.true, unwrap.guess0, n)
-
-    eob.lm <- lm(unwrap.guess0 ~ unwrap.guess.final)
-    cda.lm <- lm(unwrap.true ~ unwrap.guess.final)
-
-    eob.slope.p <- p.value(eob.lm, n, slope=TRUE)
-    eob.int.p <- p.value(eob.lm, n, slope=FALSE)
-    cda.slope.p <- p.value(cda.lm, n, slope=TRUE)
-    cda.int.p <- p.value(cda.lm, n, slope=FALSE)
-    eob.coeff <- coefficients(eob.lm)
-    eob.eq <- paste0("y = ", round(eob.coeff[2],2), "x ", round(eob.coeff[1],2))
-    cda.coeff <- coefficients(cda.lm)
-    cda.eq <- paste0("y = ", round(cda.coeff[2],2), "x ", round(cda.coeff[1],2))
-
-    chart.file <- file.path(outdir, paste0(j, ".plot.pdf"))
-    pdf(chart.file)
-
-    plot(hist(out.0$res, 15), xlab="residual p=0 case w/ true values",main=combinedname )
-    plot(hist(out.final$res, 15), xlab="residual p=p_opt w/ true values", main=combinedname)
-
-    plot(density(out.0$res), xlab="residual p=0 case w/ true values",main=combinedname )
-    plot(density(out.final$res), xlab="residual p=p_opt w/ true values", main=combinedname)
-
-    plot(unwrap.guess0, unwrap.true,pch=16,col="blue", main=combinedname, xlab="rho=0", ylab="experimental values")
-    abline(a=0, b=1)
-
-    plot(unwrap.guess.final, unwrap.true,pch=16,col="red", main=combinedname, xlab="optimal rho", ylab="experimental values")
-    abline(a=0, b=1)
-    dev.off()
+    #plot(unwrap.guess.final, unwrap.true,pch=16,col="red", main=combinedname, xlab="optimal rho", ylab="experimental values")
+    #abline(a=0, b=1)
+    #dev.off()
 
     error <- guess.final - true.values
     heatmap <- true
@@ -386,7 +363,7 @@ each.combination <- function(i, j, filenames, outdir2){
 
     print("heatmap done")
 
-    important <- data.frame(hours=hours, name=combinedname, final.rho=best.rho.final, init.rho=best.rho.init, outliers=num.outliers, t.final=out.final$p, t.0=out.0$p, concordance=concordance, thresh.0=thresh.0, thresh.final=thresh.final, eob.z=eob.z, eob.t=eob.t, z.0=z.0, z.final=z.final)
+  important <-  data.frame(hours=hours, name=combinedname, final.rho=best.rho.final, init.rho=best.rho.init, outliers=num.outliers, eob.p=eob.p$p.value, gof.p=gof.p$p.value)
 
     container <- list(hours=hours, conc=concentrations, id.concs=id.concs, drugA=drugA.name, drugB=drugB.name, guess0=guess.0, guessfinal=guess.final, true=true, guessinit=guess.init)
     
