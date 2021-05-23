@@ -1,4 +1,4 @@
-# Correlated Drug Action as a Baseline Additivity Model for Combination Cancer Therapy
+# Correlated Drug Action as a Baseline Additivity Model for Combination Cancer Therapy in Patient Cohorts and Cell Cultures
 
 Adith S. Arun, Sung-Cheol Kim, Mehmet Eren Ahsen, Gustavo Stolovitzky
 
