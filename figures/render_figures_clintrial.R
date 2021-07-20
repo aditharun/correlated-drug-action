@@ -8,8 +8,6 @@ source("figure_functions_clinical.R")
 
 renderSim <- FALSE
 
-########################################
-
 #for figure 1
 trial.to.follow <- 15
 
@@ -440,7 +438,9 @@ dotplot <- function(dir.to.clin.results, axis_text_size, title_font_size, legend
 
 	cbbPalette <- c("#000000", "#F0E442", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7")
 
-	plot <- ggplot(metares, aes(x=id, y=rho.model)) + geom_point(aes(color="c"), size=1.5) + geom_errorbar(aes(x=id, ymin=lower, ymax=upper), color="black")  + ylab("Correlation of Model Estimate") + xlab("Trial ID") + mytheme  + scale_x_continuous(breaks=seq(1,18,1)) + coord_flip()
+	metares <- metares %>% arrange(desc(rho.model)) %>% mutate(id=1:n())
+
+	plot <- ggplot(metares, aes(x=id, y=rho.model)) + geom_hline(yintercept=0, size=1, color="grey", linetype="dashed") + geom_point(aes(color="c"), size=1.5) + geom_errorbar(aes(x=id, ymin=lower, ymax=upper), color="black")  + ylab("Correlation of Model Estimate") + xlab("Trial ID") + mytheme  + scale_x_continuous(breaks=seq(1,18,1)) + coord_flip()
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_font_size), )
 
 	nonsig.rows <- metares %>% filter(p.model > p.cutoff) %>% pull(id)

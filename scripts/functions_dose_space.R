@@ -53,8 +53,8 @@ outlier.finder <- function(item.lm, n){
 }
 
 
-optimize.wrapper <- function(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, x, y, z, a, A, B, conc){
-  res <- optimize(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, x, y, z, a, A, B)
+optimize.wrapper <- function(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, x, y, z, a, A, B, conc, LOO=FALSE){
+  res <- optimize(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, x, y, z, a, A, B, LOO)
   if (conc){
     return(list(res$eqconc, res$label))
   } else{

@@ -13,8 +13,13 @@ ci <- read_csv(file.path(results.dir, "ci.csv"))
 res <- read_csv(file.path(results.dir, "results.csv"))
 
 
-dir.create(fig.dir, showWarnings = FALSE)
-dir.create(supp.dir, showWarnings = FALSE)
+if (!dir.exists(fig.dir)){
+	dir.create(fig.dir, showWarnings = FALSE)
+}
+
+if (!dir.exists(supp.dir)){
+	dir.create(supp.dir, showWarnings = FALSE)
+}
 
 ########################################
 ci$basename <- basename(ci$name)
@@ -31,6 +36,9 @@ supp.table$`Trial ID` <- as.numeric(unlist(lapply(supp.table$name,function(x) un
 
 supp.table <- supp.table %>% select(`Trial ID`, trial, lower.95.ci, sp.cor.estimate, upper.95.ci, p.value) %>% rename(`Combination`=trial)
 supp.table <- supp.table %>% arrange(`Trial ID`)
+
+supp.table <- supp.table %>% arrange(desc(sp.cor.estimate)) %>% mutate(`Trial ID`=1:n())
+
 write_csv(supp.table, file.path(supp.dir, "Supplemental File 1.csv"))
 
 summary2 <- file.path(placebo.dir, "placebo.summary.csv")

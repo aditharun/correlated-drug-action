@@ -70,7 +70,7 @@ organize.doses <- function(x){
 }
 
 
-format.data <- function(dose.dir, sp.dose.dir){
+format.data <- function(dose.dir, sp.dose.dir, LOEWE=FALSE){
 	results <- read_csv(list.files(dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na()
 	results2 <- read_csv(list.files(sp.dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na() %>% select(-c(hours,name))
 
@@ -81,6 +81,8 @@ format.data <- function(dose.dir, sp.dose.dir){
 
 	files3 <- c(files, files2)
 
+	files3 <- files3[!grepl("regression_*", files3)]
+
 	names <- do.call(rbind, lapply(files3, function(x) organize.doses(x) %>% unlist() %>% unname())) %>% as_tibble()
 	colnames(names) <- c("pvalue", "name")
 
@@ -89,14 +91,18 @@ format.data <- function(dose.dir, sp.dose.dir){
 
 	results <- results %>% select(name, init.rho, final.rho, outliers, gof.p, eob.p) %>% rename(n.outliers=outliers, gof.p=gof.p, eob.p=eob.p, pre.outlier.rho=init.rho, post.outlier.rho=final.rho)
 
-	results
+	if (LOEWE){
+		return (	results %>% arrange(desc(post.outlier.rho)) %>% mutate(trial_id=1:n() ) )
+	} else{
+		return (	results %>% arrange(desc(post.outlier.rho)) )
+	}
 
 }
 
-bl <- format.data(bliss.loewe.dose.dir, bliss.loewe.sp.dose.dir)
-bh <- format.data(bliss.hsa.dose.dir, bliss.hsa.sp.dose.dir)
+bl <- format.data(bliss.loewe.dose.dir, bliss.loewe.sp.dose.dir, LOEWE=TRUE)
+bh <- format.data(bliss.hsa.dose.dir, bliss.hsa.sp.dose.dir, LOEWE=FALSE)
 
 
-write_xlsx(list(Bliss.Loewe=bl, Bliss.HSA=bh), file.path("supplement", "Supplemental File 2.xlsx"))
+write_xlsx(list(`Sham Compliant dCDA Results`=bl, `dCDA Results`=bh), file.path("supplement", "Supplemental File 2.xlsx"))
 
 

@@ -62,7 +62,7 @@ fit <- function(dB, dA, kB, kA, nA, nB, D_A, D_B, p, A, B){
   return(list(val=val, new.conc=new.conc, label.conc=label.conc))
 }
 
-optimize <- function(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, rho, optimal, w.outliers, outliers, A, B){
+optimize <- function(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, rho, optimal, w.outliers, outliers, A, B, LOO=FALSE){
   out.matrix <- as.data.frame(matrix(1, nrow=dosingdrugA, ncol=dosingdrugB))
   eq.conc.matrix <- as.data.frame(matrix(1, nrow=dosingdrugA, ncol=dosingdrugB))
   label.matrix <- as.data.frame(matrix(1, nrow=dosingdrugA, ncol=dosingdrugB))
@@ -101,7 +101,21 @@ optimize <- function(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, rho, optima
       }
     }
 
-    rmsd <- colSums((true.values - out.matrix)^2) %>% unname() %>% sum() %>% sqrt()
+    #for a given rho, compute sum of residuals values where each value in vector corresponds residuals when that point is taken out 
+    if (LOO){
+
+      tv <- unname(unlist(true.values)) 
+      ov <- unname(unlist(out.matrix))
+
+
+      rmsd <- unlist(lapply(1:length(tv), function(x) sum( (tv[-x] - ov[-x] )^2) %>% sqrt() ) )
+    
+    } else{
+    
+      rmsd <- colSums((true.values - out.matrix)^2) %>% unname() %>% sum() %>% sqrt()
+
+
+    }
 
     return(list(out=rmsd, eqconc=eq.conc.matrix, label=label.matrix))
   }
@@ -199,6 +213,22 @@ each.combination <- function(i, j, filenames, outdir2){
 
     guess.final <- optimize.wrapper(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, best.rho.final, FALSE, FALSE, "NA", A, B, FALSE)
     guess.0 <- optimize.wrapper(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, 0, FALSE, FALSE, "NA", A, B, FALSE)
+
+
+    #LOO ant/syn specific doses computation
+    #then, when lapply is done outside function, we make into a matrix where each row is a rho and each column is a point and we find the minimum in each column and the rho assoc with it
+    rmsds.loo <- do.call(rbind, lapply(possible_rho, function(x) optimize.wrapper(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, x, TRUE, TRUE, outlier, A, B, FALSE, TRUE))) 
+
+    loo.min.rhos <- possible_rho[lapply(1:ncol(rmsds.loo), function(x) which.min(rmsds.loo[,x])) %>% unlist()]
+
+    #new yhats for each point
+    loo.fits <- lapply(loo.min.rhos, function(x) optimize.wrapper(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, best.rho.final, FALSE, FALSE, "NA", A, B, FALSE))
+
+    loo.residuals <- unlist((lapply(1:length(loo.min.rhos), function(x) unlist(unname(true %>% select(-row.id)))[x] - unlist(unname(loo.fits))[x]  ))) %>% unname()
+
+    regression.plots <- data.frame(truth=unlist(unname(true %>% select(-row.id))), guess=unlist(unname(guess.final)), loo.residuals=loo.residuals)
+
+    saveRDS(regression.plots, file.path(outdir, paste0("regression_results", j, ".rds")))
 
     eqconc.matrix <- optimize.wrapper(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, best.rho.final, TRUE, TRUE, outlier, A, B, TRUE)
 

@@ -42,7 +42,7 @@ fit <- function(dB, dA, kB, kA, nA, nB, D_A, D_B, p){
   return(val)
 }
 
-optimize <- function(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, rho, optimal, w.outliers, outliers){
+optimize <- function(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, rho, optimal, w.outliers, outliers, LOO=FALSE){
   out.matrix <- as.data.frame(matrix(1, nrow=dosingdrugA, ncol=dosingdrugB))
   B.names <- true %>% select(-row.id) %>% colnames() %>% as.numeric()
   A.names <- true$row.id %>% as.numeric()
@@ -72,8 +72,23 @@ optimize <- function(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, rho, optima
       }
     }
 
-    rmsd <- colSums((true.values - out.matrix)^2) %>% unname() %>% sum() %>% sqrt()
-    return(rmsd)
+    if (LOO){
+
+      tv <- unname(unlist(true.values)) 
+      ov <- unname(unlist(out.matrix))
+
+
+      rmsd <- unlist(lapply(1:length(tv), function(x) sum( (tv[-x] - ov[-x] )^2) %>% sqrt() ) )
+
+      return(rmsd)
+    
+    } else{
+    
+      rmsd <- colSums((true.values - out.matrix)^2) %>% unname() %>% sum() %>% sqrt()
+
+      return(rmsd)
+
+    }
   }
   return(out.matrix)
 }
@@ -173,6 +188,21 @@ each.combination <- function(i, j, filenames, outdir2){
     unwrap.guess0 <- unlist(unname(as.list(guess.0)))
     unwrap.guess.final <- unlist(unname(as.list(guess.final)))
 
+    #LOO ant/syn specific doses computation
+    #then, when lapply is done outside function, we make into a matrix where each row is a rho and each column is a point and we find the minimum in each column and the rho assoc with it
+    rmsds.loo <- do.call(rbind, lapply(possible_rho, function(x) optimize(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, x, TRUE, TRUE, outlier, TRUE) ) )
+
+    loo.min.rhos <- possible_rho[lapply(1:ncol(rmsds.loo), function(x) which.min(rmsds.loo[,x])) %>% unlist()]
+
+    #new yhats for each point
+    loo.fits <- lapply(loo.min.rhos, function(x) optimize(dosingdrugB, dosingdrugA, true, kB, kA, nA, nB, x, FALSE, FALSE, outlier, FALSE) )
+
+    loo.residuals <- unlist((lapply(1:length(loo.min.rhos), function(x) unlist(unname(true %>% select(-row.id)))[x] - unlist(unname(loo.fits))[x]  ))) %>% unname()
+
+    regression.plots <- data.frame(truth=unlist(unname(true %>% select(-row.id))), guess=unlist(unname(guess.final)), loo.residuals=loo.residuals)
+
+    saveRDS(regression.plots, file.path(outdir, paste0("regression_results", j, ".rds")))
+
     print("final optimization done")
 
     if (!identical(outlier, integer(0))){
@@ -189,6 +219,8 @@ each.combination <- function(i, j, filenames, outdir2){
     #two sample paired t test between unwrap.true and unwrap.guess0 (result: eob.p)
 
     eob.p <- t.test(unwrap.guess0, unwrap.true, paired=TRUE, alternative="two.sided")
+
+
 
 
     #out.0 <- ostt(unwrap.guess0, unwrap.true)

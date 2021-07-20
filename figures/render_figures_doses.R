@@ -77,7 +77,7 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, siz
 	p.cutoff <- 0.01
 
 	results <- read_csv(list.files(dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na()
-	results2 <- read_csv(list.files(sp.dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na() %>% select(-c(hours,name))
+	results2 <- read_csv(list.files(sp.dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na() %>% dplyr::select(-c(hours,name))
 
 	results <- rbind(results, results2)
 
@@ -86,29 +86,36 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, siz
 
 	files3 <- c(files, files2)
 
+	files3 <- files3[!grepl("regression_*", files3)]
+
 	names <- do.call(rbind, lapply(files3, function(x) organize.doses(x) %>% unlist() %>% unname())) %>% as_tibble()
+
 	colnames(names) <- c("pvalue", "name")
 
 	names$pvalue <- as.numeric(names$pvalue)
 
-	final <- results %>% left_join(names, by=c("gof.p"="pvalue")) %>% mutate(trial_id=1:n()) %>% select(trial_id, name, final.rho, init.rho, outliers, eob.p, gof.p)
+	final <- results %>% left_join(names, by=c("gof.p"="pvalue")) %>% mutate(trial_id=1:n()) %>% dplyr::select(trial_id, name, final.rho, init.rho, outliers, eob.p, gof.p)
 
-	write.csv(final, "supplement/doses.results.csv")
+	#write.csv(final, "supplement/doses.results.csv")
 
 	mylevels.x <- unique(final$trial_id)
 	final$trial_id <- factor(final$trial_id, mylevels.x[order(as.numeric(mylevels.x))])
 
-	k <- ggplot(final, aes(x=trial_id, y=final.rho+0.001)) + geom_bar(stat="identity") 
+	final <- final %>% arrange(desc(final.rho)) %>% mutate(trial_id = 1:n()) 
 
-	goodfit <- final %>% filter(gof.p > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.007, final.rho+0.007))
+	k <- ggplot(final, aes(x=trial_id, y=final.rho+0.002)) + geom_bar(stat="identity") + scale_x_continuous(breaks=seq(1,dim(final)[1],1))
+
+	k <- k  + coord_flip()
+
+	goodfit <- final %>% filter(gof.p > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.022, final.rho+0.022))
 	label.df <- data.frame(trial_id = goodfit %>% pull(trial_id),
 	                       final.rho = goodfit %>% pull(p))
 
-	eobfit <- final %>% filter(eob.p > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.025, final.rho+0.02))
+	eobfit <- final %>% filter(eob.p > p.cutoff) %>% mutate(p=ifelse(final.rho < 0, final.rho-0.01, final.rho+0.01))
 	label.df2 <- data.frame(trial_id = eobfit %>% pull(trial_id),
 	                       final.rho = eobfit %>% pull(p))
 
-	k <- k + geom_text(data = label.df, label = "\u2021", size=(size_geom_text+1)) + geom_text(data = label.df2, label = "**", size=(size_geom_text+1))
+	k <- k + geom_text(data = label.df, label = "x", size=(size_geom_text+1)) + geom_text(data = label.df2, label = "\u2021", size=(size_geom_text+1))
 
 		mytheme <- theme(
 			panel.background = element_rect(fill = "transparent"), # bg of the panel
@@ -120,8 +127,10 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, siz
 			axis.title.y = element_text(size = title_size)) + theme(plot.title = element_text(size = title_size))
 
 	k <- k + mytheme + xlab("Trial ID") + ylab("Estimate for \u03c1") 
-	k <- k + geom_hline(yintercept=0)
-	k <- k + annotate(geom = 'text', label = "   ** = EOB condition is valid, \u2021 = Good fit to observed combination" , x = -Inf, y = -0.17, hjust = 0, vjust = 1, size=(size_geom_text+1.5))
+	k <- k + geom_hline(yintercept=0, color="grey70", size=1, linetype="dashed")
+	k <- k + annotate(geom = 'text', label = "  \u2021 = EOB condition is valid, x = Good fit to observed combination" , x = 0, y = -Inf, hjust = 0, vjust = 1, size=(size_geom_text+2))
+
+	k <- k + geom_segment(aes(x=trial_id, xend=trial_id, y=-Inf, yend=0), linetype="dashed", size=0.25, color="grey70")
 
 	k
 }
@@ -161,16 +170,16 @@ pvalues.scatter <- function(loc, loc2, legend_size, title_size, axis_text_size){
 
 
 		if (bool1 & bool2){
-			item <- "Fit and EOB is good"
+			item <- "EOCDA and EOB is good"
 		}
 		if (bool1 & !bool2){
-			item <- "Fit is good, EOB is not"
+			item <- "EOCDA is good, EOB is not"
 		}
 		if (!bool1 & bool2){
-			item <- "EOB is good, Fit is not good"
+			item <- "EOB is good, EOCDA is not good"
 		}
 		if (!bool1 & !bool2){
-			item <- "EOB and Fit both not good"
+			item <- "EOB and EOCDA both not good"
 		}
 
 		doses.results$guide[k] <- item
@@ -194,7 +203,7 @@ pvalues.scatter <- function(loc, loc2, legend_size, title_size, axis_text_size){
 	legend <- theme(legend.justification = 'left', legend.position="bottom", legend.title = element_blank(), legend.key = element_rect(colour = "transparent", fill = "white"), legend.text=element_text(size=legend_size), ) 
 	cbbPalette <- c( "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-	plot <- ggplot(doses.results, aes(x=transformed.fit.p, y=transformed.eob.p, color=guide)) + geom_point(size = 2.4) + geom_hline(yintercept=threshold, linetype="dashed", color="grey", size=1.6) + geom_vline(xintercept=threshold, linetype="dashed", color="grey", size=1.6) + mytheme + xlab("-log10 p-value for GoF") + ylab("-log10 p-value for EOB") + legend + scale_color_manual(values=cbbPalette[-4]) + guides(colour = guide_legend(nrow = 2))
+	plot <- ggplot(doses.results, aes(x=transformed.fit.p, y=transformed.eob.p, color=guide)) + geom_point(size = 2.4) + geom_hline(yintercept=threshold, linetype="dashed", color="grey", size=1.6) + geom_vline(xintercept=threshold, linetype="dashed", color="grey", size=1.6) + mytheme + xlab("-log10 p-value for EOCDA") + ylab("-log10 p-value for EOB") + legend + scale_color_manual(values=cbbPalette[-4]) + guides(colour = guide_legend(nrow = 2))
 	
 	#for 2 rows of legend instead of 1
 	#plot <- plot +  guides(color = guide_legend(nrow = 2))
@@ -215,6 +224,8 @@ files <- list.files(dose.dir, recursive=TRUE, full.names=TRUE, pattern="*.rds")
 files2 <- list.files(sp.dose.dir, recursive=TRUE, full.names=TRUE, pattern="*.rds")
 
 files3 <- c(files, files2)
+
+files3 <- files3[!grepl("regression_*", files3)]
 
 
 dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, axis_text_size, legend_size, label_size, pvalue_cex){
@@ -271,6 +282,43 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 
 	pvalue <- t.test(unwrap.guess.final, unwrap.true, paired=TRUE, alternative="two.sided")$p.value
 
+	#compute possibly synergistic or antaongistic specific doses if the combination is dCDA
+
+	regression.plots <-  readRDS(file.path(dirname(x), paste0("regression_", basename(x))) )
+
+	if (pvalue > 0.01){
+
+
+		#MLE of normal using residuals 
+		mu_hat <- mean(unwrap.true - unwrap.guess.final)
+		var_hat <- var(unwrap.true - unwrap.guess.final)
+		sigma_hat <- sqrt(var_hat)
+
+		regression.plots$z = (mu_hat - regression.plots$loo.residuals ) / sigma_hat
+
+		regression.plots$p = 2 * pnorm( q=regression.plots$z, lower.tail=FALSE)
+
+		data <- regression.plots %>% mutate(status=ifelse(p < 0.05, "Non-Additive", "Additive"))
+
+	} else {
+
+		data <-  regression.plots
+
+	}
+
+		#regression line
+
+		#set both axes to have same limits
+		lim_max <- max(data$truth, data$guess)
+		#lim_min <- min(data$gd, data$tf)
+		lim_min <- 0
+
+		#regression PLOT (may have to tweak some details)
+		cbPalette_regplot <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
+
+		data$error <- data$guess - data$truth
+
+
 	sp.doses.results <- read_csv(paste0(sp.dose.dir, "/sp.doses.results.csv")) %>% as_tibble() %>% drop_na()
 	doses.results <- read_csv(paste0(dose.dir, "/doses.results.csv")) %>% as_tibble() %>% drop_na()
 
@@ -286,21 +334,30 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 	}
 	#add p value to regression bottom corner like fig 2 b-e
 
-	data <- data.frame(gf=unwrap.guess.final, tf=unwrap.true)
+	#data <- data.frame(gf=unwrap.guess.final, tf=unwrap.true)
 
 	combination.name <- paste0(drugA.name, " and ", drugB.name)
 
 	title.combination <- ggdraw() + draw_label(paste0(combination.name," Combination"), size = (title_size+6), fontface='bold') #to left align use x = 0, hjust = 0
 
+		if (pvalue > 0.01){
 
-	if (sp){
-	title <- paste0("Time: ", drug.hr, " Hours")
-	}
-	#regression line
-	p <- ggplot(data, aes(x=gf, y=tf)) + geom_point(size=2.4) + mytheme + xlab(paste0("Estimate for ", combination.name, " Viability")) + ylab(paste0("Observed ", combination.name," Viability")) + geom_abline(slope=1, intercept=0, color=cbbPalette[8], linetype="dashed", size=1.6)
-	p <- p + annotate(geom = 'text', label = paste0('   GoF p-value = ', pround, '; \u03C1 = ', rho) , x = -Inf, y = 5, hjust = 0, vjust = 1, size=(pvalue_cex+1))
+			p <- ggplot(data, aes(x=guess, y=truth, color=error, shape=status)) + scale_color_gradient2(name="", low="darkblue", high="red", guide="colorbar") + geom_abline(slope=1, intercept=0, color=cbPalette_regplot[8], linetype="dashed", size=1.8) + geom_point(size=6, aes(color=error)) + geom_point(size=2, color="black") + mytheme + xlab(paste0("Estimate for ", combination.name, " Viability")) + ylab(paste0("Observed ", combination.name," Viability")) + xlim(lim_min, lim_max) + ylim(lim_min, lim_max) + theme(legend.key = element_blank(), legend.text=element_text(size=(legend_size-2) ), legend.title = element_text(size=legend_size) ) + guides(color = FALSE) + labs(shape="Status of Dose")
 
-	#EOCDA definition is estimated - observed (so + = synergy (red), - = antagonism (blue) )
+		} else{
+
+			p <- ggplot(data, aes(x=guess, y=truth, color=error)) + scale_color_gradient2(name="", low="darkblue", high="red", guide="colorbar") + geom_abline(slope=1, intercept=0, color=cbPalette_regplot[8], linetype="dashed", size=1.8) + geom_point(size=6, aes(color=error)) + geom_point(size=2, color="black") + mytheme + xlab(paste0("Estimate for ", combination.name, " Viability")) + ylab(paste0("Observed ", combination.name," Viability")) + xlim(lim_min, lim_max) + ylim(lim_min, lim_max) + theme(legend.key = element_blank(), legend.text=element_text(size=(legend_size-2) ), legend.title = element_text(size=legend_size) ) + guides(color = FALSE) 
+
+		}
+
+
+			p <- p + annotate(geom = 'text', label = paste0('   GoF p-value = ', pround, '; \u03C1 = ', rho) , x = -Inf, y = 5, hjust = 0, vjust = 1, size=(pvalue_cex+1))
+
+		if (sp){
+			title <- paste0("Time: ", drug.hr, " Hours")
+		}
+
+			#EOCDA definition is estimated - observed (so + = synergy (red), - = antagonism (blue) )
 	error <-  guess.final - true.values 
 
 
@@ -420,8 +477,8 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 a <- pvalues.scatter(loc, loc2, legend_size, title_size, axis_text_size)
 d <- barplot.doses(dose.dir, sp.dose.dir, axis_text_size-2, title_size, size_geom_text)
 
-ex1 <- files[grepl("combo3/results5", files3)]
-ex2 <- files[grepl("combo2/results1", files3)]
+ex1 <- files3[grepl("combo3/results5", files3)]
+ex2 <- files3[grepl("combo2/results1", files3)]
 
 
 b <- dose.maps.plots(dose.dir, sp.dose.dir, ex1, c("C", "D"),  title_size, axis_text_size, legend_size, label_size, pvalue_cex)
