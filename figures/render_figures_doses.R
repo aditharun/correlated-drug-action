@@ -74,8 +74,6 @@ organize.doses <- function(x){
 
 barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, size_geom_text){
 
-	p.cutoff <- 0.01
-
 	results <- read_csv(list.files(dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na()
 	results2 <- read_csv(list.files(sp.dose.dir, full.names=TRUE, pattern="*.csv")) %>% drop_na() %>% dplyr::select(-c(hours,name))
 
@@ -95,6 +93,8 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, siz
 	names$pvalue <- as.numeric(names$pvalue)
 
 	final <- results %>% left_join(names, by=c("gof.p"="pvalue")) %>% mutate(trial_id=1:n()) %>% dplyr::select(trial_id, name, final.rho, init.rho, outliers, eob.p, gof.p)
+
+	p.cutoff <- 0.05 / nrow(final)
 
 	#write.csv(final, "supplement/doses.results.csv")
 
@@ -126,7 +126,7 @@ barplot.doses <- function(dose.dir, sp.dose.dir, axis_text_size, title_size, siz
 		axis.title.x = element_text(size = title_size),
 			axis.title.y = element_text(size = title_size)) + theme(plot.title = element_text(size = title_size))
 
-	k <- k + mytheme + xlab("Trial ID") + ylab("Estimate for \u03c1") 
+	k <- k + mytheme + xlab("Experiment ID") + ylab("Estimate for \u03c1") 
 	k <- k + geom_hline(yintercept=0, color="grey70", size=1, linetype="dashed")
 	k <- k + annotate(geom = 'text', label = "  \u2021 = EOB condition is valid, x = Good fit to observed combination" , x = 0, y = -Inf, hjust = 0, vjust = 1, size=(size_geom_text+2))
 
@@ -149,12 +149,10 @@ pvalues.scatter <- function(loc, loc2, legend_size, title_size, axis_text_size){
 	library(readxl)
 	library(ggExtra)
 
-	p.cutoff <- 0.01
 
 	doses.results <- read_csv(file.path(loc, "doses.results.csv"))
 	sp.doses.results <- read_csv(file.path(loc2, "sp.doses.results.csv"))
 
-	threshold <- -log(p.cutoff, base=10)
 
 	doses.results <- doses.results %>% mutate(transformed.fit.p=-log(gof.p, base=10), transformed.eob.p=-log(eob.p, base=10))
 	sp.doses.results <- sp.doses.results %>% mutate(transformed.fit.p=-log(gof.p, base=10), transformed.eob.p=-log(eob.p, base=10))
@@ -164,6 +162,11 @@ pvalues.scatter <- function(loc, loc2, legend_size, title_size, axis_text_size){
 
 	doses.results <- rbind(doses.results, sp.doses.results %>% select(-c(name, hours)))
 	doses.results$guide <- "none"
+
+	p.cutoff <- 0.05 / nrow(doses.results)  #0.05 / number of trials
+	threshold <- -log(p.cutoff, base=10)
+
+
 	for (k in 1:dim(doses.results)[1]){
 		bool1 <- doses.results$transformed.fit.p[k] <= threshold
 		bool2 <- doses.results$transformed.eob.p[k] <= threshold
@@ -351,7 +354,7 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 		}
 
 
-			p <- p + annotate(geom = 'text', label = paste0('   GoF p-value = ', pround, '; \u03C1 = ', rho) , x = -Inf, y = 5, hjust = 0, vjust = 1, size=(pvalue_cex+1))
+			p <- p + annotate(geom = 'text', label = paste0('  EOCDA p-value = ', pround, '; \u03C1 = ', rho) , x = -Inf, y = 5, hjust = 0, vjust = 1, size=(pvalue_cex+1))
 
 		if (sp){
 			title <- paste0("Time: ", drug.hr, " Hours")

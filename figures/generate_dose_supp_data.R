@@ -22,8 +22,8 @@ results.dir <- "../results.cell.line"
 bliss.loewe.dose.dir <- file.path(results.dir, "doses.results.Bliss.Loewe")
 bliss.loewe.sp.dose.dir <- file.path(results.dir, "sp.doses.results.Bliss.Loewe")
 
-bliss.hsa.dose.dir <- file.path(results.dir, "doses.results.Bliss.HSA")
-bliss.hsa.sp.dose.dir <- file.path(results.dir, "sp.doses.results.Bliss.HSA")
+#bliss.hsa.dose.dir <- file.path(results.dir, "doses.results.Bliss.HSA")
+#bliss.hsa.sp.dose.dir <- file.path(results.dir, "sp.doses.results.Bliss.HSA")
 
 ##############################################################
 
@@ -100,9 +100,9 @@ format.data <- function(dose.dir, sp.dose.dir, LOEWE=FALSE){
 }
 
 bl <- format.data(bliss.loewe.dose.dir, bliss.loewe.sp.dose.dir, LOEWE=TRUE)
-bh <- format.data(bliss.hsa.dose.dir, bliss.hsa.sp.dose.dir, LOEWE=FALSE)
+#bh <- format.data(bliss.hsa.dose.dir, bliss.hsa.sp.dose.dir, LOEWE=FALSE)
 
 
-write_xlsx(list(`Sham Compliant dCDA Results`=bl, `dCDA Results`=bh), file.path("supplement", "Supplemental File 2.xlsx"))
+write_xlsx(list(`dCDA Results`=bl), file.path("supplement", "Supplemental Table 2.xlsx"))
 
 

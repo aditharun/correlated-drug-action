@@ -74,7 +74,7 @@ fraction_figure <- function(dat, axis_text_size, legend_size, title_size, facet_
 	plot <- ggplot(int.panels, aes(x=A, y=B, color=online)) + geom_point(size=2) + facet_wrap(~rho, scales="free") + scale_color_manual(name="", labels=c("not on corr = 1 curve", "on corr = 1 curve"), values=cbbPalette) + guides(colour = guide_legend(nrow = 1)) + legend + mytheme + theme(strip.text=element_text(size=facet_text_size), strip.background = element_blank())
 	plot <- plot + xlab("Simulated Survival Times Under Drug A") + ylab("Simulated Survival Times Under Drug B") 
 
-	plot2 <- ggplot(g, aes(x=rho, y=fraction)) + geom_point(size=2.4) + mytheme + xlab("Set Value of \u03c1 in Coin Simulation") + ylab("Fraction of points on the \u03c1 = 1 curve") + geom_abline(slope=1, intercept=0, color="blue", linetype="dashed", size=1.6)
+	plot2 <- ggplot(g, aes(x=rho, y=fraction)) + geom_point(size=2.4) + mytheme + xlab("Computed \u03c1 in Coin Simulation") + ylab("Fraction of points on the \u03c1 = 1 curve") + geom_abline(slope=1, intercept=0, color="blue", linetype="dashed", size=1.6)
 	plot2 <- plot2 + annotate(geom = 'text', label = paste0("   R-squared: ", rsq, ", p-value: ", pval) , x = -Inf, y = -0.15, hjust = 0, vjust = 1, size=6)
 	
 	fig <- plot_grid(plot, plot2, labels="AUTO", label_size=label_size, ncol=2)
@@ -289,7 +289,7 @@ real.methods.comp <- function(rho, k, dir.to.clin, dir.to.clin.results,axis_text
 
 	times.actual <- data.frame(model=b.model, sim=b.sim, A=times$drugA)
 	times.actual <- pivot_longer(times.actual, -A, names_to="method", values_to="B")
-	drugs.labs <- c("Model", "Simulation")
+	drugs.labs <- c("Coin", "Window Swap")
 	names(drugs.labs) <- c("model",  "sim")
 	cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
