@@ -20,17 +20,17 @@ The MCF7 cell line tested combinations are stored within the `raw-data/cell_line
 
 # Usage and Workflow
 
-All the code necessary to perform analyses are located within the `scripts` directory. 
+All the code necessary to perform analyses are located within the `scripts/` directory. 
 
 To generate Temporal CDA Model results and figures, run the R script `metascript.clintrial.R` which analyzes clinical trials and imputes placebo performance. To generate Dose-space CDA Model results and figures, run the R script `metascript.doses.R` which analyzes cell line experiments. 
 
 ### Temporal CDA Model for Clinical Trials
 
-Run the R script `scripts/clinicaltrial.R` to generate the directory `results.clinical.trial` with estimates for the combination PFS cuurve, bootstrapped 95% confidence intervals, and other summary measures. Within the script, there are changeable parameters including the number of bootstrap samples, and interpolation frequency. 
+Run the R script `clinicaltrial.R` in `scripts/` to generate the directory `results.clinical.trial` with estimates for the combination PFS cuurve, bootstrapped 95% confidence intervals, and other summary measures. Within the script, there are changeable parameters including the number of bootstrap samples, and interpolation frequency. 
 
-To impute a plausible placebo PFS curve for collected clinical trial combinations for which the relevant data is provided (Trial ID's 2, 4, 8, 14), run the R script `scripts/placebo.R`. 
+To impute a plausible placebo PFS curve for collected clinical trial combinations for which the relevant data is provided (Trial ID's 2, 4, 8, 14), run the R script `placebo.R` in `scripts/`. 
 
-Subsequently, after running `clinicaltrial.R`, run the R script `scripts/summary_clintrial.R` to generate summary tables with all relevant output parameters. 
+Subsequently, after running `clinicaltrial.R`, run the R script `summary_clintrial.R` in `scripts/` to generate summary tables with all relevant output parameters. 
 
 ### Dose-space CDA Model for Cell Lines
 
@@ -38,14 +38,14 @@ There are two different formulations of the dose-space CDA Model.
 
 ##### The method we use is the one that incorporates the Bliss and Loewe additivity models: 
 
-Run the R script `scripts/doses.loewe.R` to generate the results directory `results.cell.line/doses.results.Bliss.Loewe`. Similarly, for the time series expeirments, run the R script `scripts/sp.doses.loewe.R` to generate the results directory `results.cell.line/sp.doses.results.Bliss.Loewe`. 
+Navigate to `scripts/` and run the R script `doses.loewe.R` to generate the results directory `results.cell.line/doses.results.Bliss.Loewe`. Similarly, for the time series expeirments, run the R script `sp.doses.loewe.R` in `scripts/` to generate the results directory `results.cell.line/sp.doses.results.Bliss.Loewe`. 
 
 ##### The alternative method is the one that incorporates the Bliss and Highest Single Agent (HSA) additivity models:
 
-Run the R script `scripts/doses.loewe.R` to generate the results directory `results.cell.line/doses.results.Bliss.Loewe`. Similarly, for the time series expeirments, run the R script `scripts/sp.doses.hsa.R` to generate the results directory `results.cell.line/sp.doses.results.Bliss.HSA`. 
+Navigate to `scripts/` and run the R script `doses.loewe.R` to generate the results directory `results.cell.line/doses.results.Bliss.Loewe`. Similarly, for the time series expeirments, run the R script `sp.doses.hsa.R` in `scripts/` to generate the results directory `results.cell.line/sp.doses.results.Bliss.HSA`. 
 
 In our tested combinations, both methods perform very similarly. The Bliss-Loewe is favored because we can apply the principle of dose-equivalence from the theory of Loewe additivity to determine the minimum monotherapy dose necessary to recreate the effect of the combination. 
 
 # Figures
 
-All figures and supplemental figures are shown here. To generate them, simply run the `figures/render_figures_clintrial.R` script for clinical trial and placebo figures; `figures/render_figures_sim.R` for simulation based figures; `figures/render_figures_doses.R` and `figures/generate_dose_supp_data.R` for cell line figures.
+All figures and supplemental figures are shown here. To generate them, navigate to the `figures/` directory and simply run the `render_figures_clintrial.R` script for clinical trial and placebo figures; `render_figures_sim.R` for simulation based figures; `render_figures_doses.R` and `generate_dose_supp_data.R` for cell line figures. 

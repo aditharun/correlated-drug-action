@@ -301,7 +301,7 @@ dose.maps.plots <- function(dose.dir, sp.dose.dir, x, item_labels, title_size, a
 
 		regression.plots$p = 2 * pnorm( q=regression.plots$z, lower.tail=FALSE)
 
-		data <- regression.plots %>% mutate(status=ifelse(p < 0.05, "Non-Additive", "Additive"))
+		data <- regression.plots %>% mutate(status=ifelse(p < 0.05, "Non-dCDA", "dCDA"))
 
 	} else {
 
